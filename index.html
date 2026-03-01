@@ -91,6 +91,7 @@
         .input-area[placeholder]:empty:before {
             content: attr(placeholder);
             color: var(--text-muted);
+            cursor: text;
         }
 
         .input-area::-webkit-scrollbar { width: 4px; }
@@ -266,12 +267,22 @@
 <script type="module">
     import { SplendidGrandPiano, Reverb } from "https://unpkg.com/smplr/dist/index.mjs";
 
+    const llmOutput = document.getElementById('llmOutput');
+
     // --- Helper: Paste as Plain Text ---
-    // Since we use a div, we must ensure users don't paste styled HTML
-    document.getElementById('llmOutput').addEventListener('paste', (e) => {
+    llmOutput.addEventListener('paste', (e) => {
         e.preventDefault();
         const text = (e.originalEvent || e).clipboardData.getData('text/plain');
         document.execCommand('insertText', false, text);
+    });
+
+    // --- Helper: Fix Placeholder on Empty ---
+    // Browsers often leave a <br> when clearing contenteditable, breaking CSS :empty.
+    // This forces it to be truly empty when text is gone.
+    llmOutput.addEventListener('input', function() {
+        if (this.innerText.trim() === '') {
+            this.innerHTML = '';
+        }
     });
 
     window.generatePrompt = function() {
@@ -299,9 +310,8 @@
     let visualTimeouts = [];
 
     window.playMusic = async function() {
-        const outputDiv = document.getElementById('llmOutput');
         // Get raw text content (ignores HTML tags)
-        const rawText = outputDiv.innerText;
+        const rawText = llmOutput.innerText;
         const regex = /([a-zA-Z0-9#b+]+):(\d+(\.\d+)?)/g;
         const matches = [...rawText.matchAll(regex)];
 
@@ -313,7 +323,7 @@
         window.stopMusic();
 
         // Lock editing during playback
-        outputDiv.contentEditable = "false";
+        llmOutput.contentEditable = "false";
 
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         audioCtx = new AudioContext();
@@ -382,9 +392,9 @@
                     const active = rawText.substring(startIdx, endIdx);
                     const after = rawText.substring(endIdx);
                     
-                    outputDiv.innerHTML = `${before}<span class="active-note">${active}</span>${after}`;
+                    llmOutput.innerHTML = `${before}<span class="active-note">${active}</span>${after}`;
                     
-                    const activeSpan = outputDiv.querySelector('.active-note');
+                    const activeSpan = llmOutput.querySelector('.active-note');
                     if (activeSpan) {
                         activeSpan.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
@@ -411,8 +421,6 @@
     };
 
     window.stopMusic = function() {
-        const outputDiv = document.getElementById('llmOutput');
-
         if (audioCtx) {
             audioCtx.close(); 
             audioCtx = null;
@@ -436,9 +444,14 @@
         document.getElementById('stopBtn').disabled = true;
 
         // Unlock editing and strip HTML tags
-        outputDiv.contentEditable = "true";
+        llmOutput.contentEditable = "true";
         // Flattening: innerText retrieves only text, stripping the <span> tags
-        outputDiv.innerText = outputDiv.innerText; 
+        llmOutput.innerText = llmOutput.innerText; 
+        
+        // Final clean check - triggers placeholder if empty
+        if (llmOutput.innerText.trim() === '') {
+            llmOutput.innerHTML = '';
+        }
     };
 </script>
 
