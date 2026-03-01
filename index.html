@@ -60,32 +60,31 @@
             font-weight: 500;
         }
 
-        /* Inputs */
-        input[type="text"], .input-area {
+        /* Shared Input Styles */
+        input[type="text"], .input-area, textarea {
             background: transparent;
             border: none;
             color: var(--text-main);
             outline: none;
             width: 100%;
             line-height: 1.4;
+            font-weight: 300; /* Ensures thin text everywhere */
         }
 
         input[type="text"] {
             font-size: 2rem;
-            font-weight: 300;
             margin-bottom: 2rem;
             flex-shrink: 0;
         }
 
-        /* The Playback Area (formerly textarea) */
+        /* The Playback Area (Right Pane) */
         .input-area {
             flex-grow: 1;
             font-size: 1.25rem;
-            font-weight: 300;
             color: var(--text-body);
             margin-bottom: 2rem;
             overflow-y: auto;
-            white-space: pre-wrap; /* Preserves formatting like textarea */
+            white-space: pre-wrap; 
             word-break: break-word;
         }
 
@@ -200,7 +199,7 @@
             transform: scale(1.3);
         }
 
-        /* Readonly textarea for prompt copy */
+        /* Readonly textarea for prompt copy (Left Pane) */
         textarea#promptOutput {
             background: transparent;
             border: none;
@@ -211,7 +210,12 @@
             resize: none;
             flex-grow: 1;
             margin-bottom: 2rem;
+            font-weight: 300; /* Explicitly set to thin */
         }
+        
+        textarea#promptOutput::-webkit-scrollbar { width: 4px; }
+        textarea#promptOutput::-webkit-scrollbar-track { background: transparent; }
+        textarea#promptOutput::-webkit-scrollbar-thumb { background: var(--border-dim); }
 
         @media (max-width: 900px) {
             body { overflow: auto; }
@@ -363,25 +367,23 @@
                 }
 
                 // 2. Visual Trigger (Bolding)
-                // We calculate when the note *actually* starts playing
                 const delayMs = (nextNoteTime - audioCtx.currentTime) * 1000;
                 
-                // Store match indices to reconstruct HTML string later
+                // Store match indices
                 const startIdx = match.index;
                 const endIdx = startIdx + match[0].length;
                 
                 const highlightId = setTimeout(() => {
                     if (!audioCtx) return;
 
-                    // Reconstruct HTML to wrap the active note in a span
+                    // IMPORTANT: We use the *original* rawText to rebuild the HTML every time.
+                    // This prevents HTML tag accumulation and ensures clean state.
                     const before = rawText.substring(0, startIdx);
                     const active = rawText.substring(startIdx, endIdx);
                     const after = rawText.substring(endIdx);
                     
-                    // Update HTML
                     outputDiv.innerHTML = `${before}<span class="active-note">${active}</span>${after}`;
                     
-                    // Auto-scroll logic: find the active span and scroll to it
                     const activeSpan = outputDiv.querySelector('.active-note');
                     if (activeSpan) {
                         activeSpan.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -433,9 +435,10 @@
         
         document.getElementById('stopBtn').disabled = true;
 
-        // Unlock editing and strip HTML tags (remove bolding)
+        // Unlock editing and strip HTML tags
         outputDiv.contentEditable = "true";
-        outputDiv.innerText = outputDiv.innerText; // Flattens HTML back to plain text
+        // Flattening: innerText retrieves only text, stripping the <span> tags
+        outputDiv.innerText = outputDiv.innerText; 
     };
 </script>
 
