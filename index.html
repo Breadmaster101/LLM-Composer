@@ -59,7 +59,6 @@
             font-weight: 500;
         }
 
-        /* Shared Input Styles */
         input[type="text"], .input-area, textarea {
             background: transparent;
             border: none;
@@ -67,7 +66,7 @@
             outline: none;
             width: 100%;
             line-height: 1.4;
-            font-weight: 300; /* Ensures thin text everywhere */
+            font-weight: 300;
         }
 
         input[type="text"] {
@@ -76,7 +75,6 @@
             flex-shrink: 0;
         }
 
-        /* The Playback Area (Right Pane) */
         .input-area {
             flex-grow: 1;
             font-size: 1.25rem;
@@ -97,7 +95,6 @@
         .input-area::-webkit-scrollbar-track { background: transparent; }
         .input-area::-webkit-scrollbar-thumb { background: var(--border-dim); }
 
-        /* The Bold Active State */
         .active-note {
             font-weight: 700;
             color: #fff;
@@ -159,46 +156,6 @@
             cursor: default;
         }
 
-        .slider-container {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-left: auto;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        input[type="range"] {
-            -webkit-appearance: none;
-            appearance: none;
-            background: transparent;
-            width: 300px;
-            cursor: pointer;
-        }
-
-        input[type="range"]::-webkit-slider-runnable-track {
-            height: 1px;
-            background: var(--border-dim);
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 12px;
-            width: 12px;
-            border-radius: 50%;
-            background: var(--text-main);
-            margin-top: -5.5px;
-            transition: transform 0.1s;
-        }
-
-        input[type="range"]:hover::-webkit-slider-thumb {
-            transform: scale(1.3);
-        }
-
-        /* Readonly textarea for prompt copy (Left Pane) */
         textarea#promptOutput {
             background: transparent;
             border: none;
@@ -209,7 +166,7 @@
             resize: none;
             flex-grow: 1;
             margin-bottom: 2rem;
-            font-weight: 300; /* Explicitly set to thin */
+            font-weight: 300;
         }
         
         textarea#promptOutput::-webkit-scrollbar { width: 4px; }
@@ -223,18 +180,16 @@
             .pane:last-child { border-bottom: none; }
             input[type="text"] { font-size: 1.5rem; }
             .input-area { font-size: 1.1rem; }
-            .slider-container { margin-left: 0; width: 100%; justify-content: space-between; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- Left Pane: Prompt Generation -->
     <div class="pane">
         <div class="step-label">Prompt (Paste into LLM)</div>
         
-        <input type="text" id="topicInput" placeholder="Describe your song..." oninput="generatePrompt()">
+        <input type="text" id="topicInput" placeholder="Describe your song here..." oninput="generatePrompt()">
         
         <textarea id="promptOutput" readonly></textarea>
         
@@ -243,21 +198,14 @@
         </div>
     </div>
 
-    <!-- Right Pane: Playback -->
     <div class="pane">
         <div class="step-label">Piano Playback</div>
         
-        <!-- Replaced Textarea with ContentEditable Div for Bolding -->
-        <div id="llmOutput" class="input-area" contenteditable="true" placeholder="Paste LLM output here&#10;&#10;e.g., C4:1 C4+E4+G4:2 R:1 C5:4"></div>
+        <div id="llmOutput" class="input-area" contenteditable="true" placeholder="Paste LLM output here&#10;&#10;e.g., [T:50] [D:p] [Ped:On] R(E4:0.25 F#4:0.25) L(E1+B1+E2:0.5) |"></div>
         
         <div class="controls">
             <button onclick="playMusic()" id="playBtn">Play</button>
             <button onclick="stopMusic()" id="stopBtn" disabled>Stop</button>
-            
-            <div class="slider-container">
-                Bpm <span id="bpmValue">120</span>
-                <input type="range" id="bpmSlider" min="40" max="240" value="120" oninput="document.getElementById('bpmValue').innerText = this.value">
-            </div>
         </div>
     </div>
 </div>
@@ -267,16 +215,12 @@
 
     const llmOutput = document.getElementById('llmOutput');
 
-    // --- Helper: Paste as Plain Text ---
     llmOutput.addEventListener('paste', (e) => {
         e.preventDefault();
         const text = (e.originalEvent || e).clipboardData.getData('text/plain');
         document.execCommand('insertText', false, text);
     });
 
-    // --- Helper: Fix Placeholder on Empty ---
-    // Browsers often leave a <br> when clearing contenteditable, breaking CSS :empty.
-    // This forces it to be truly empty when text is gone.
     llmOutput.addEventListener('input', function() {
         if (this.innerText.trim() === '') {
             this.innerHTML = '';
@@ -285,7 +229,20 @@
 
     window.generatePrompt = function() {
         const topic = document.getElementById('topicInput').value || 'A Hanz Zimmer-esque main theme for a sci-fi movie. An overall very iconic, memorable, emotional, unique, and moving song.';
-        const prompt = `Act as an expert composer. Write a polyphonic solo piano piece (melody and chords together) for the following prompt: "${topic}"\n\nOutput ONLY the sequence of notes using this exact format: Notes:Beats\n- Notes: Note name and octave (e.g., C4, D#4). To play multiple notes at the exact same time (chords/polyphony), join them with a plus sign (e.g., C4+E4+G4).\n- Beats: Duration in beats (0.5 = eighth note, 1 = quarter note, 2 = half note, etc.).\n- Rests: Use "R" for rests (e.g., R:1).\n- Separate each block with a single space.\n\nExample Output:\nC4:1 C4+E4+G4:2 R:0.5 C5+E5:1.5 C4+G4+C5+Eb5:4\n\nProvide ONLY the raw text sequence. Do not include introductory text, explanations, or markdown code blocks. The BPM used is 120.`;
+        const prompt = `Act as an expert composer. Write a complex piano piece for the following prompt: "${topic}"
+
+Output ONLY the sequence of notes using this format to capture nuances:
+1. Voices (Polyphony): Use R(...) and L(...) or V1(...)/V2(...) to allow independent rhythms simultaneously.
+2. Notes:Beats: e.g. E4:0.25. Use plus for chords (C4+E4+G4:2). Rests are R:1.
+3. Tempo Changes: Use [T:BPM] (e.g. [T:50], [T:65]).
+4. Dynamics: Use [D:p], [D:mp], [D:f], etc. to control volume gracefully.
+5. Sustain Pedal: Use [Ped:On] and [Ped:Off] to link beautiful ambient chords.
+6. Measure Markers: Use | to separate measures and synchronize R and L voices.
+
+Example Output:
+[T:50] [D:p] [Ped:On] R(E4:0.25 F#4:0.25 E4:0.25 B4:0.25) L(E1+B1+E2:1) | [T:65] [D:f] R(G5:1) L(C3:1) [Ped:Off]
+
+Provide ONLY the raw text sequence. Do not include introductory text, explanations, or markdown code blocks.`;
         
         document.getElementById('promptOutput').value = prompt;
     };
@@ -308,25 +265,81 @@
     let visualTimeouts = [];
 
     window.playMusic = async function() {
-        // Get raw text content (ignores HTML tags)
         const rawText = llmOutput.innerText;
-        const regex = /([a-zA-Z0-9#b+]+):(\d+(\.\d+)?)/g;
-        const matches = [...rawText.matchAll(regex)];
 
-        if (matches.length === 0) {
+        const regex = /\[T:(\d+(\.\d+)?)\]|\[D:([a-zA-Z]+)\]|\[Ped:(On|Off)\]|\||([A-Za-z0-9]+)\(|\)|([a-zA-Z0-9#b+]+):(\d+(\.\d+)?)/gi;
+        
+        let match;
+        let events = [];
+        let tempoMap = [{ beat: 0, bpm: 120 }];
+        let currentVel = 75; 
+        
+        let currentMeasureBeat = 0;
+        let activeVoice = 'default';
+        let voiceOffsets = { 'default': 0 };
+
+        function getCurrentBeat() { return currentMeasureBeat + (voiceOffsets[activeVoice] || 0); }
+        function advanceTime(beats) { voiceOffsets[activeVoice] = (voiceOffsets[activeVoice] || 0) + beats; }
+
+        while ((match = regex.exec(rawText)) !== null) {
+            const token = match[0];
+            
+            if (match[1]) {
+                tempoMap.push({ beat: getCurrentBeat(), bpm: parseFloat(match[1]) });
+            } 
+            else if (match[3]) {
+                const dyn = match[3].toLowerCase();
+                const vels = { pp:40, p:55, mp:70, mf:85, f:100, ff:115 };
+                currentVel = vels[dyn] || 75;
+            } 
+            else if (match[4]) {
+                events.push({ type: 'pedal', state: match[4].toLowerCase() === 'on', beat: getCurrentBeat() });
+            } 
+            else if (token === '|') {
+                let maxOffset = 0;
+                for (let v in voiceOffsets) { if (voiceOffsets[v] > maxOffset) maxOffset = voiceOffsets[v]; }
+                currentMeasureBeat += maxOffset;
+                voiceOffsets = {};
+                activeVoice = 'default';
+            } 
+            else if (match[5]) {
+                activeVoice = match[5].toUpperCase();
+                if (voiceOffsets[activeVoice] === undefined) voiceOffsets[activeVoice] = 0;
+            } 
+            else if (token === ')') {
+                activeVoice = 'default';
+            } 
+            else if (match[6] && match[7]) {
+                const noteStr = match[6];
+                const dur = parseFloat(match[7]);
+                const isRest = noteStr.toUpperCase().startsWith('R');
+                
+                events.push({
+                    type: isRest ? 'rest' : 'note',
+                    notes: isRest ? [] : noteStr.split('+').map(n => n.charAt(0).toUpperCase() + n.slice(1).toLowerCase()),
+                    beat: getCurrentBeat(),
+                    durationBeats: dur,
+                    velocity: Math.min(127, Math.max(0, currentVel + Math.floor(Math.random() * 10 - 5))),
+                    matchIndex: match.index,
+                    matchLength: token.length
+                });
+                advanceTime(dur);
+            }
+        }
+
+        const noteEvents = events.filter(e => e.type === 'note' || e.type === 'rest');
+        if (noteEvents.length === 0) {
             alert("No valid notes found.");
             return;
         }
 
         window.stopMusic();
-
-        // Lock editing during playback
         llmOutput.contentEditable = "false";
 
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         audioCtx = new AudioContext();
         piano = new SplendidGrandPiano(audioCtx);
-        piano.output.addEffect("reverb", new Reverb(audioCtx), 0.25);
+        piano.output.addEffect("reverb", new Reverb(audioCtx), 0.3);
 
         const playBtn = document.getElementById('playBtn');
         const stopBtn = document.getElementById('stopBtn');
@@ -335,121 +348,129 @@
         playBtn.innerText = "Loading...";
 
         await piano.load;
-
         if (!audioCtx || audioCtx.state === 'closed') return;
 
         playBtn.innerText = "Playing...";
         playBtn.classList.add('btn-playing');
         stopBtn.disabled = false;
 
-        let currentNoteIndex = 0;
-        let nextNoteTime = audioCtx.currentTime + 0.1;
+        tempoMap.sort((a, b) => a.beat - b.beat);
+        events.sort((a, b) => a.beat - b.beat);
+
+        function beatToSec(beat) {
+            let sec = 0, currentBPM = tempoMap[0].bpm, lastBeat = 0;
+            for (let i = 1; i < tempoMap.length; i++) {
+                if (beat >= tempoMap[i].beat) {
+                    sec += (tempoMap[i].beat - lastBeat) * (60 / currentBPM);
+                    currentBPM = tempoMap[i].bpm;
+                    lastBeat = tempoMap[i].beat;
+                } else break;
+            }
+            sec += (beat - lastBeat) * (60 / currentBPM);
+            return sec;
+        }
+
+        events.forEach(ev => {
+            ev.sec = beatToSec(ev.beat);
+            if (ev.type === 'note' || ev.type === 'rest') {
+                ev.durationSecs = beatToSec(ev.beat + ev.durationBeats) - ev.sec;
+            }
+        });
+
+        const pedalEvents = events.filter(e => e.type === 'pedal');
+        events.forEach(ev => {
+            if (ev.type === 'note') {
+                let latestPedal = pedalEvents.slice().reverse().find(p => p.beat <= ev.beat);
+                if (latestPedal && latestPedal.state === true) {
+                    let nextOff = pedalEvents.find(p => p.beat > ev.beat && !p.state);
+                    let offBeat = nextOff ? nextOff.beat : ev.beat + 4;
+                    let offSec = beatToSec(offBeat);
+                    let endSec = ev.sec + ev.durationSecs;
+                    if (offSec > endSec) ev.durationSecs = offSec - ev.sec;
+                }
+            }
+        });
+
+        const visualGroups = {};
+        noteEvents.forEach(ev => {
+            const tStr = ev.sec.toFixed(3);
+            if (!visualGroups[tStr]) visualGroups[tStr] = [];
+            visualGroups[tStr].push({ start: ev.matchIndex, end: ev.matchIndex + ev.matchLength });
+        });
+
+        let currentEventIndex = 0;
+        let visualGroupKeys = Object.keys(visualGroups).map(Number).sort((a,b) => a - b);
+        let currentVisualIndex = 0;
+        const startTime = audioCtx.currentTime + 0.1;
 
         function schedule() {
             if (!audioCtx || audioCtx.state === 'closed') return;
+            const lookahead = 0.5;
+            const now = audioCtx.currentTime - startTime;
 
-            while (currentNoteIndex < matches.length && nextNoteTime < audioCtx.currentTime + 0.2) {
-                const match = matches[currentNoteIndex];
-                const noteBlock = match[1];
-                const durationBeats = parseFloat(match[2]);
-
-                const bpm = parseInt(document.getElementById('bpmSlider').value) || 120;
-                const beatDurationSecs = 60 / bpm;
-                const durationSecs = durationBeats * beatDurationSecs;
-
-                // 1. Audio Trigger
-                if (!noteBlock.toUpperCase().startsWith('R')) {
-                    const notes = noteBlock.split('+');
-                    notes.forEach(noteStr => {
-                        const formattedNote = noteStr.charAt(0).toUpperCase() + noteStr.slice(1).toLowerCase();
-                        const velocity = Math.floor(70 + Math.random() * 35);
+            while (currentEventIndex < events.length && events[currentEventIndex].sec < now + lookahead) {
+                const ev = events[currentEventIndex];
+                if (ev.type === 'note') {
+                    ev.notes.forEach(n => {
                         try {
-                            piano.start({
-                                note: formattedNote,
-                                time: nextNoteTime,
-                                duration: durationSecs,
-                                velocity: velocity
-                            });
-                        } catch(e) {}
+                            piano.start({ note: n, time: startTime + ev.sec, duration: ev.durationSecs, velocity: ev.velocity });
+                        } catch(err) {}
                     });
                 }
-
-                // 2. Visual Trigger (Bolding)
-                const delayMs = (nextNoteTime - audioCtx.currentTime) * 1000;
-                
-                // Store match indices
-                const startIdx = match.index;
-                const endIdx = startIdx + match[0].length;
-                
-                const highlightId = setTimeout(() => {
-                    if (!audioCtx) return;
-
-                    // IMPORTANT: We use the *original* rawText to rebuild the HTML every time.
-                    // This prevents HTML tag accumulation and ensures clean state.
-                    const before = rawText.substring(0, startIdx);
-                    const active = rawText.substring(startIdx, endIdx);
-                    const after = rawText.substring(endIdx);
-                    
-                    llmOutput.innerHTML = `${before}<span class="active-note">${active}</span>${after}`;
-                    
-                    const activeSpan = llmOutput.querySelector('.active-note');
-                    if (activeSpan) {
-                        activeSpan.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-
-                }, Math.max(0, delayMs));
-
-                visualTimeouts.push(highlightId);
-                
-                nextNoteTime += durationSecs;
-                currentNoteIndex++;
+                currentEventIndex++;
             }
 
-            if (currentNoteIndex < matches.length) {
-                stopTimeout = setTimeout(schedule, 25);
+            while (currentVisualIndex < visualGroupKeys.length && visualGroupKeys[currentVisualIndex] < now + lookahead) {
+                const tSec = visualGroupKeys[currentVisualIndex];
+                const spans = visualGroups[tSec.toFixed(3)];
+                const delayMs = (startTime + tSec - audioCtx.currentTime) * 1000;
+                
+                spans.sort((a, b) => b.start - a.start);
+                
+                const id = setTimeout(() => {
+                    if (!audioCtx || audioCtx.state === 'closed') return;
+                    let html = rawText;
+                    spans.forEach(span => {
+                        html = html.substring(0, span.start) + 
+                               `<span class="active-note">${html.substring(span.start, span.end)}</span>` + 
+                               html.substring(span.end);
+                    });
+                    llmOutput.innerHTML = html;
+                    const activeSpan = llmOutput.querySelector('.active-note');
+                    if (activeSpan) activeSpan.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, Math.max(0, delayMs));
+                
+                visualTimeouts.push(id);
+                currentVisualIndex++;
+            }
+
+            if (currentEventIndex < events.length || currentVisualIndex < visualGroupKeys.length) {
+                stopTimeout = setTimeout(schedule, 100);
             } else {
-                const totalDurationMs = (nextNoteTime - audioCtx.currentTime) * 1000 + 1000;
-                stopTimeout = setTimeout(() => {
-                    window.stopMusic();
-                }, Math.max(totalDurationMs, 0));
+                const totalDurationSecs = events.length > 0 ? events[events.length - 1].sec + 2 : 2;
+                stopTimeout = setTimeout(() => { window.stopMusic(); }, Math.max(0, (startTime + totalDurationSecs - audioCtx.currentTime) * 1000));
             }
         }
-
         schedule();
     };
 
     window.stopMusic = function() {
-        if (audioCtx) {
-            audioCtx.close(); 
-            audioCtx = null;
-        }
+        if (audioCtx) { audioCtx.close(); audioCtx = null; }
         piano = null;
         
-        if (stopTimeout) {
-            clearTimeout(stopTimeout);
-            stopTimeout = null;
-        }
-
+        if (stopTimeout) { clearTimeout(stopTimeout); stopTimeout = null; }
         visualTimeouts.forEach(id => clearTimeout(id));
         visualTimeouts = [];
 
-        // UI Reset
         const playBtn = document.getElementById('playBtn');
         playBtn.disabled = false;
         playBtn.innerText = "Play";
         playBtn.classList.remove('btn-playing');
-        
         document.getElementById('stopBtn').disabled = true;
 
-        // Unlock editing and strip HTML tags
         llmOutput.contentEditable = "true";
-        // Flattening: innerText retrieves only text, stripping the <span> tags
         llmOutput.innerText = llmOutput.innerText; 
-        
-        // Final clean check - triggers placeholder if empty
-        if (llmOutput.innerText.trim() === '') {
-            llmOutput.innerHTML = '';
-        }
+        if (llmOutput.innerText.trim() === '') llmOutput.innerHTML = '';
     };
 </script>
 
